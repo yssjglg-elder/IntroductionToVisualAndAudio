@@ -1,7 +1,10 @@
 import numpy as np
 import sklearn
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, learning_curve, validation_curve
 from sklearn.preprocessing import StandardScaler, Normalizer, PolynomialFeatures
+from sklearn.utils import shuffle
 
 data1 = np.empty([100,13])
 data2 = np.empty([100,13])
@@ -15,20 +18,25 @@ for i in range(0,100):
     data3[i][:] = np.load('E:/dataset/test/' + str(i) + '/feat.npy')
 
 x_train = np.vstack((data1,data2))
-x_test = data3
+#x_test = data3
 x_train=list(x_train)
 y_train = [1]*100 + [0]*100
+
+
 poly=PolynomialFeatures(3)  #生成多项式特征
 x_train_poly = poly.fit_transform(x_train)
+#x_test_poly = poly.fit_transform(x_test)
 xtrans = StandardScaler().fit(x_train_poly)
+#xtest_trans= StandardScaler().fit(x_test_poly)
 standaedizedX=xtrans.transform(x_train_poly)  #标准化0.775 正规化0.69
+#standaedizedXtest=xtrans.transform(x_test_poly)
 
 clf = LogisticRegression(penalty='l2',  # 惩罚项（l1与l2），默认l2
                          dual=False,  # 对偶或原始方法，默认False，样本数量>样本特征\
                          # 的时候，dual通常设置为False
                          tol=0.0001,  # 停止求解的标准，float类型，默认为1e-4。\
                          # 就是求解到多少的时候，停止，认为已经求出最优解
-                         C=100.0,  # 正则化系数λ的倒数，float类型，默认为1.0，越小的数值表示越强的正则化。
+                         C=20.0,  # 正则化系数λ的倒数，float类型，默认为1.0，越小的数值表示越强的正则化。
                          fit_intercept=True,  # 是否存在截距或偏差，bool类型，默认为True。
                          intercept_scaling=1,  # 仅在正则化项为”liblinear”，\
                          # 且fit_intercept设置为True时有用。float类型，默认为1
@@ -49,3 +57,32 @@ clf = LogisticRegression(penalty='l2',  # 惩罚项（l1与l2），默认l2
 clf.fit(standaedizedX, y_train)  # 拟合训练
 print(clf.score(standaedizedX,y_train))
 print(clf.predict(standaedizedX))
+#print(clf.predict(standaedizedXtest))
+
+#过拟合可视化，随着不同数量的输入错误率变化的曲线
+# train_sizes,train_score,test_score = learning_curve(clf, standaedizedX, y_train,
+#                 train_sizes=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+#                 cv=10, scoring='accuracy')
+# train_error = 1 - np.mean(train_score,axis=1)
+# test_error = 1 - np.mean(test_score,axis=1)
+# plt.plot(train_sizes,train_error,'o-',color = 'r',label = 'training')
+# plt.plot(train_sizes,test_error,'o-',color = 'g',label = 'testing')
+# plt.legend(loc='best')
+# plt.xlabel('traing examples')
+# plt.ylabel('error')
+# plt.show()
+# x_t,x_test,y_t,y_test=train_test_split(standaedizedX,y_train,test_size=0.01)
+# print(clf.score(x_t,y_t))
+# print(clf.predict(x_t))
+
+#调参可视化，随着参数不同，正确率变化的曲线
+param_range = [1,5,10,20,30,40,50,60,70,80,100]
+train_score,test_score = validation_curve(clf,standaedizedX, y_train,param_name='C',param_range=param_range,cv=10,scoring='accuracy')
+train_score =  np.mean(train_score,axis=1)
+test_score = np.mean(test_score,axis=1)
+plt.plot(param_range,train_score,'o-',color = 'r',label = 'training')
+plt.plot(param_range,test_score,'o-',color = 'g',label = 'testing')
+plt.legend(loc='best')
+plt.xlabel('number')
+plt.ylabel('accuracy')
+plt.show()
